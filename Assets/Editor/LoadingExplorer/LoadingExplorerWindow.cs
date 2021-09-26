@@ -21,7 +21,9 @@ public class LoadingExplorerWindow : EditorWindow
     private const int k_ItemSpace = 16;
     private const int k_Space = 5;
 
-    protected const float k_BottomToolbarHeight = 21f;
+
+    private const int k_PriviewMinSize = 50;
+    private const int k_SpliterHeight = 21;
 
 
     class Styles
@@ -126,6 +128,10 @@ public class LoadingExplorerWindow : EditorWindow
 
     [SerializeField]
     private Vector2 m_MaterialEditorScrollPos;
+
+    [SerializeField]
+    Loading.SplitterState m_PreviewSplitter;
+
 
 
     [MenuItem("Tools/Loading View")]
@@ -299,9 +305,33 @@ public class LoadingExplorerWindow : EditorWindow
         if (m_CurViewIndex >= 0 && m_CurViewIndex < m_LoadingList.Count)
         {
             var data = m_LoadingList[m_CurViewIndex];
-            DrawPreview(data);
-            DrawPreviewBar();
-            DrawSelectedMaterialEditor(data);
+
+            if (m_PreviewSplitter.targetObject == null)
+            {
+                m_PreviewSplitter = Loading.SplitterState.FromRelative(new float[] { 30, 70 }, new float[] { k_PriviewMinSize, 32 }, null, k_SpliterHeight);
+            }
+            Loading.SplitterGUILayout.BeginVerticalSplit(m_PreviewSplitter, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+            {
+                var splitterRect = Loading.SplitterGUILayout.GetSplitterRect(m_PreviewSplitter, 0);
+                DrawPreviewBar(splitterRect);
+
+                // up part
+                GUILayout.BeginVertical();
+                {
+                    DrawPreview(data);
+                }
+                GUILayout.EndVertical();
+
+                // down part
+                GUILayout.BeginVertical();
+                {
+                    DrawSelectedMaterialEditor(data);
+                }
+                GUILayout.EndVertical();
+            }
+            Loading.SplitterGUILayout.EndVerticalSplit();
+
+
         }
         else
         {
@@ -316,7 +346,7 @@ public class LoadingExplorerWindow : EditorWindow
 
     private void DrawPreview(LoadingData data)
     {
-        var layoutRect = GUILayoutUtility.GetRect(50f, -1f, 50f, -1f, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+        var layoutRect = GUILayoutUtility.GetRect(k_PriviewMinSize, -1f, k_PriviewMinSize, -1f, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
         var minValue = Mathf.Min(layoutRect.width, layoutRect.height);
         var drawRect = layoutRect;
         drawRect.x = layoutRect.x + (layoutRect.width - minValue) * 0.5f;
@@ -335,18 +365,19 @@ public class LoadingExplorerWindow : EditorWindow
         RenderTexture.ReleaseTemporary(new_rt);
     }
 
-    private void DrawPreviewBar()
+    private void DrawPreviewBar(Rect dragRect)
     {
-        Rect dragRect;
+
+        
         Rect dragIconRect = new Rect();
         const float dragPadding = 3f;
-        EditorGUILayout.BeginHorizontal(Styles.PreToolbar, GUILayout.Height(k_BottomToolbarHeight));
+        //EditorGUILayout.BeginHorizontal(Styles.PreToolbar, GUILayout.Height(k_BottomToolbarHeight));
         {
-            GUILayout.FlexibleSpace();
-            dragRect = GUILayoutUtility.GetLastRect();
+            //GUILayout.FlexibleSpace();
+            //dragRect = GUILayoutUtility.GetLastRect();
 
             dragIconRect.x = dragRect.x + dragPadding;
-            dragIconRect.y = dragRect.y + (k_BottomToolbarHeight - Styles.DragHandle.fixedHeight) / 2;
+            dragIconRect.y = dragRect.y + (dragRect.height - Styles.DragHandle.fixedHeight) / 2;
             dragIconRect.width = dragRect.width - dragPadding * 2;
             dragIconRect.height = Styles.DragHandle.fixedHeight;
 
@@ -358,7 +389,7 @@ public class LoadingExplorerWindow : EditorWindow
                 Styles.DragHandle.Draw(dragIconRect, GUIContent.none, false, false, false, false);
             }
         }
-        EditorGUILayout.EndHorizontal();
+        //EditorGUILayout.EndHorizontal();
     }
 
     private void DrawSelectedMaterialEditor(LoadingData data)
